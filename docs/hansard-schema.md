@@ -1,0 +1,142 @@
+# Hansard JSON schema
+
+`parliament ask --json` prints a complete Hansard: the question, the members
+who debated it, each phase response, and the Speaker's final synthesis. The JSON
+shape mirrors the dataclasses in `src/parliament/core/types.py` and is stable
+for simple shell pipelines.
+
+Generate a sample with:
+
+```bash
+parliament ask "Should we split this service?" --mock --json
+```
+
+## Top-level object
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `bill` | `Bill` | The question submitted to Parliament. |
+| `members` | `Member[]` | The models configured for the session. |
+| `first_reading` | `Response[]` | Each member's initial answer to the bill. |
+| `debate` | `Response[]` | Each member's critique after seeing the other first-reading responses. |
+| `synthesis` | `Synthesis` | The Speaker's final structured verdict. |
+| `id` | `string` | UUID for this Hansard. |
+| `created_at` | `string` | ISO-8601 timestamp for when the session was created. |
+| `duration_ms` | `number` | Total wall-clock duration in milliseconds. |
+
+## `Bill`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `content` | `string` | The full question text passed to `parliament ask`. |
+| `title` | `string` | A short title. Defaults to the first 60 characters of `content`. |
+
+## `Member`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Display name used in debate output. |
+| `provider_name` | `string` | Provider key, such as `ollama`, `anthropic`, `openai`, `google`, or `mock`. |
+| `model` | `string` | Provider model identifier. |
+| `tier` | `number` | Model capability tier resolved from the model catalog. |
+
+## `Response`
+
+`first_reading` and `debate` are arrays of `Response` objects.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `member_name` | `string` | Name of the member that produced this response. |
+| `content` | `string` | The response text. |
+| `phase` | `"first_reading" \| "debate"` | Phase that produced the response. |
+| `duration_ms` | `number` | Duration for this member response in milliseconds. |
+
+## `Synthesis`
+
+The `synthesis` object is the Speaker's Division output, parsed into the same
+four parts shown in the normal terminal verdict.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `speaker_name` | `string` | Member chosen to write the final synthesis. |
+| `consensus` | `string` | Points the members mostly agreed on. |
+| `split` | `string` | Material disagreements or trade-offs. |
+| `risks` | `string` | Risks, caveats, and failure modes. |
+| `recommendation` | `string` | Final recommended course of action. |
+| `raw` | `string` | Full unparsed Speaker output before the four fields above were extracted. |
+
+## Example shape
+
+```json
+{
+  "bill": {
+    "content": "Should we split this service?",
+    "title": "Should we split this service?"
+  },
+  "members": [
+    {
+      "name": "Mock-1",
+      "provider_name": "mock",
+      "model": "mock",
+      "tier": 3
+    }
+  ],
+  "first_reading": [
+    {
+      "member_name": "Mock-1",
+      "content": "Initial analysis...",
+      "phase": "first_reading",
+      "duration_ms": 12
+    }
+  ],
+  "debate": [
+    {
+      "member_name": "Mock-1",
+      "content": "Critique...",
+      "phase": "debate",
+      "duration_ms": 9
+    }
+  ],
+  "synthesis": {
+    "speaker_name": "Mock-1",
+    "consensus": "...",
+    "split": "...",
+    "risks": "...",
+    "recommendation": "...",
+    "raw": "..."
+  },
+  "id": "b0a5f3b0-1111-4222-8333-444455556666",
+  "created_at": "2026-01-01T12:00:00+00:00",
+  "duration_ms": 1234
+}
+```
+
+## Practical `jq` recipes
+
+Print only the final recommendation:
+
+```bash
+parliament ask "Should we split this service?" --json \
+  | jq -r .synthesis.recommendation
+```
+
+List the configured members and models:
+
+```bash
+parliament ask "Which queue should we use?" --json \
+  | jq -r '.members[] | "\(.name): \(.provider_name)/\(.model)"'
+```
+
+Print each first-reading response with its member name:
+
+```bash
+parliament ask "Is this architecture too complex?" --json \
+  | jq -r '.first_reading[] | "\(.member_name): \(.content)"'
+```
+
+Print debate critiques in phase order:
+
+```bash
+parliament ask "Should this be async?" --json \
+  | jq -r '.debate[] | "\(.member_name): \(.content)"'
+```

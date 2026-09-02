@@ -306,6 +306,9 @@ parliament ask "Is this architecture too complex?" --mock
 # Show the full transcript before the verdict (post-hoc dump)
 parliament ask "Which queue should we use?" --verbose
 
+# Print the full Hansard as JSON for scripts and jq pipelines
+parliament ask "Which queue should we use?" --json
+
 # Hide the live debate panels and only print the final verdict
 parliament ask "Quick check?" --no-show-debate
 
@@ -372,6 +375,10 @@ Set the level via three precedence-ordered sources:
 The level applies to the saved `.md` file **and** the post-run terminal
 output. The live in-flight debate view is independent — toggle it
 separately with `--show-debate` / `--no-show-debate`.
+
+For machine-readable output, `parliament ask --json` prints the complete
+Hansard object. See [docs/hansard-schema.md](docs/hansard-schema.md) for the
+JSON fields and practical `jq` examples.
 
 TUI controls:
 

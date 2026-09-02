@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `parliament ask --json` now prints the complete Hansard object for scripts,
+  with `docs/hansard-schema.md` documenting the fields and common `jq` recipes.
+
 ## [0.2.0] — 2026-05-19
 
 ### Added
