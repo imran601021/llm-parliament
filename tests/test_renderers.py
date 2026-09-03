@@ -10,6 +10,7 @@ from rich.console import Console
 from parliament.core.types import ProgressEvent, Response, Synthesis
 from parliament.render import (
     DebateRenderer,
+    JsonDiagnosticsRenderer,
     RichLiveRenderer,
     SilentRenderer,
     build_renderer,
@@ -149,3 +150,87 @@ def test_rich_renderer_shows_failure_with_error(recording_console):
     assert "Beta" in output
     # Error text should surface visibly, not be silently swallowed.
     assert "synthetic failure" in output.lower() or "failed" in output.lower()
+
+
+# ---------- JsonDiagnosticsRenderer ----------
+
+
+def test_json_diagnostics_renderer_is_a_debate_renderer():
+    assert isinstance(JsonDiagnosticsRenderer(), DebateRenderer)
+
+
+def test_json_diagnostics_renderer_reports_failures(recording_console):
+    """A failed member must surface — --json output would otherwise hide it."""
+    console, _ = recording_console
+    r = JsonDiagnosticsRenderer(console=console)
+    with r:
+        r.emit(
+            ProgressEvent(
+                phase="first_reading",
+                member_name="Beta",
+                kind="failed",
+                error="RuntimeError: synthetic failure",
+                duration_ms=5,
+            )
+        )
+    output = _drain(recording_console)
+    assert "Beta" in output
+    assert "first_reading" in output
+    assert "synthetic failure" in output
+
+
+def test_json_diagnostics_renderer_ignores_non_failures(recording_console):
+    """Everything except failures stays silent — stdout carries the JSON document."""
+    console, _ = recording_console
+    r = JsonDiagnosticsRenderer(console=console)
+    with r:
+        r.emit(ProgressEvent(phase="first_reading", member_name="A", kind="started"))
+        r.emit(
+            ProgressEvent(
+                phase="first_reading",
+                member_name="A",
+                kind="completed",
+                response=Response(member_name="A", content="x", phase="first_reading"),
+            )
+        )
+        r.emit(
+            ProgressEvent(
+                phase="division",
+                member_name="A",
+                kind="completed",
+                synthesis=Synthesis(speaker_name="A", recommendation="go"),
+            )
+        )
+    assert _drain(recording_console) == ""
+
+
+def test_json_diagnostics_renderer_tolerates_missing_error_text(recording_console):
+    """emit() must not raise — the DebateRenderer contract requires it."""
+    console, _ = recording_console
+    r = JsonDiagnosticsRenderer(console=console)
+    with r:
+        r.emit(ProgressEvent(phase="debate", member_name="Gamma", kind="failed"))
+    output = _drain(recording_console)
+    assert "Gamma" in output
+    assert "unknown error" in output
+
+
+def test_json_diagnostics_renderer_survives_markup_in_error_text(recording_console):
+    """Provider errors carry brackets; markup must never raise or eat content."""
+    console, _ = recording_console
+    r = JsonDiagnosticsRenderer(console=console)
+    with r:
+        # "[/red]" is an unmatched closing tag — fatal if parsed as markup.
+        r.emit(
+            ProgressEvent(
+                phase="debate",
+                member_name="Beta",
+                kind="failed",
+                error="timeout in [/red] handler for [user_id]",
+            )
+        )
+    output = _drain(recording_console)
+    assert "Beta" in output
+    # Both bracketed spans survive verbatim rather than being swallowed.
+    assert "[/red]" in output
+    assert "[user_id]" in output

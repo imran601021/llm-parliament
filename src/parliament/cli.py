@@ -6,6 +6,7 @@ import asyncio
 import os
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 import click
 from rich.console import Console
@@ -28,13 +29,22 @@ from parliament.config import (
 )
 from parliament.core.model_tiers import detect_gap, get_tier_label
 from parliament.core.parliament import Parliament
-from parliament.render import SilentRenderer, build_renderer
+from parliament.render import JsonDiagnosticsRenderer, build_renderer
 from parliament.render.hansard import HansardLevel, render_terminal
 
 console = (
     Console(force_terminal=True, legacy_windows=False)
     if sys.stdout.isatty()
     else Console()
+)
+
+# Diagnostics sink for --json runs: stdout belongs to the JSON document, so
+# warnings, failures and errors go to stderr instead. Same TTY handling as
+# the stdout singleton above.
+err_console = (
+    Console(stderr=True, force_terminal=True, legacy_windows=False)
+    if sys.stderr.isatty()
+    else Console(stderr=True)
 )
 
 
@@ -114,6 +124,19 @@ def main(ctx: click.Context, config_path: Path | None, speaker: str | None, mock
         raise SystemExit(1)
 
 
+def _ask_error(json_output: bool, message: str) -> NoReturn:
+    """Print an `ask` failure and exit 1.
+
+    Errors can be raised before the per-run diagnostics console is bound (a bad
+    config path, say), so the stream is picked from the flag rather than from a
+    local. Under --json this keeps stdout a clean JSON document: a consumer
+    piping to jq gets the message on stderr and a non-zero exit, not a parse
+    error.
+    """
+    (err_console if json_output else console).print(message)
+    raise SystemExit(1)
+
+
 @main.command()
 @click.argument("question")
 @click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), default=None)
@@ -173,10 +196,13 @@ def ask(
             level = HansardLevel.FULL
 
         show = resolve_show_debate(cli_flag=show_debate, config=config)
-        renderer = SilentRenderer() if json_output else build_renderer(
-            show_debate=show,
-            mode="cli",
-            console=console,
+        # Under --json stdout carries the Hansard document, so diagnostics are
+        # routed to stderr and the live debate view is dropped entirely.
+        diag = err_console if json_output else console
+        renderer = (
+            JsonDiagnosticsRenderer(console=err_console)
+            if json_output
+            else build_renderer(show_debate=show, mode="cli", console=console)
         )
 
         p = Parliament(
@@ -186,9 +212,8 @@ def ask(
             speaker_override=speaker,
         )
 
-        if not json_output:
-            for warning in p.check_gaps():
-                console.print(f"[yellow]Warning: {warning}[/yellow]")
+        for warning in p.check_gaps():
+            diag.print(f"[yellow]Warning: {warning}[/yellow]")
 
         if not json_output:
             member_names = " | ".join(m.name for m in members)
@@ -208,7 +233,7 @@ def ask(
             try:
                 hansard = asyncio.run(p.ask(question))
             except KeyboardInterrupt:
-                console.print("[yellow]Debate cancelled.[/yellow]")
+                diag.print("[yellow]Debate cancelled.[/yellow]")
                 raise SystemExit(130)
 
         if json_output:
@@ -217,14 +242,11 @@ def ask(
             render_terminal(hansard, level, console)
 
     except FileNotFoundError as e:
-        console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        _ask_error(json_output, f"[red]Error: {e}[/red]")
     except ImportError as e:
-        console.print(f"[red]{e}[/red]")
-        raise SystemExit(1)
+        _ask_error(json_output, f"[red]{e}[/red]")
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        _ask_error(json_output, f"[red]Error: {e}[/red]")
 
 
 @main.command()

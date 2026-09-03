@@ -228,3 +228,34 @@ class RichLiveRenderer(DebateRenderer):
         if not chunks:
             chunks.append(getattr(s, "raw", "") or "(empty synthesis)")
         return "\n\n".join(chunks)
+
+
+class JsonDiagnosticsRenderer(DebateRenderer):
+    """Diagnostics-only renderer for `parliament ask --json`.
+
+    JSON output owns stdout, so this renderer draws no live UI at all.
+    It still forwards member failures to the given console (stderr in the
+    CLI) so a provider outage is never silent — the Hansard would otherwise
+    just carry one fewer response with no explanation.
+    """
+
+    def __init__(self, console: Console | None = None) -> None:
+        self._console = console or Console(stderr=True)
+
+    def emit(self, event: ProgressEvent) -> None:
+        if event.kind != "failed":
+            return
+        try:
+            error = event.error or "unknown error"
+            # Rendered as Text, not markup: provider error strings are external
+            # input and routinely carry brackets. As a markup string, "[/red]"
+            # raises MarkupError and "[user_id]" is silently swallowed — either
+            # way the diagnostic this renderer exists to deliver is lost.
+            self._console.print(
+                Text(
+                    f"{event.member_name} failed during {event.phase}: {error}",
+                    style="red",
+                )
+            )
+        except Exception:  # pragma: no cover - never break a debate
+            return
