@@ -3,6 +3,11 @@
 [![PyPI version](https://img.shields.io/pypi/v/llm-parliament.svg)](https://pypi.org/project/llm-parliament/)
 [![Python](https://img.shields.io/pypi/pyversions/llm-parliament.svg)](https://pypi.org/project/llm-parliament/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![CI](https://github.com/elarmuzik1993/llm-parliament/actions/workflows/ci.yml/badge.svg)](https://github.com/elarmuzik1993/llm-parliament/actions/workflows/ci.yml)
+
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![good first issues](https://img.shields.io/github/issues/elarmuzik1993/llm-parliament/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/elarmuzik1993/llm-parliament/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+[![help wanted](https://img.shields.io/github/issues/elarmuzik1993/llm-parliament/help%20wanted?label=help%20wanted&color=008672)](https://github.com/elarmuzik1993/llm-parliament/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 
 Multi-agent debate for better AI decisions. Research-backed, local-first.
 
@@ -26,6 +31,12 @@ See [CHANGELOG.md](CHANGELOG.md) for the release history.
 > install, breaks on your terminal, or could be more polished, please
 > [open an issue](https://github.com/elarmuzik1993/llm-parliament/issues/new) or
 > say hi in [Discussions](https://github.com/elarmuzik1993/llm-parliament/discussions).
+>
+> **Concrete places to start:**
+> [good first issues](https://github.com/elarmuzik1993/llm-parliament/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+> · [help wanted](https://github.com/elarmuzik1993/llm-parliament/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+> · [roadmap](https://github.com/elarmuzik1993/llm-parliament/issues/15)
+> · [CONTRIBUTING.md](CONTRIBUTING.md)
 >
 > Stars also help me see what's resonating. Thanks for taking a look. 🙏
 
@@ -422,7 +433,7 @@ cd llm-parliament
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
-python -m pip install -e ".[all,dev]"
+python -m pip install -e ".[dev]"
 ```
 
 Windows (PowerShell):
@@ -434,7 +445,7 @@ cd llm-parliament
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -U pip
-python -m pip install -e ".[all,dev]"
+python -m pip install -e ".[dev]"
 ```
 
 (In `cmd.exe`, use `.venv\Scripts\activate.bat` instead.)
@@ -481,6 +492,47 @@ AGENTS.md                 Contributor source-of-truth (architecture, conventions
 CHANGELOG.md              Release history (Keep-a-Changelog)
 RELEASING.md              PyPI release procedure
 ```
+
+## Contributing
+
+Yes, please. This project is early and there is a lot of easy ground to cover —
+bug reports, docs fixes, terminal-compatibility reports, and code are all
+welcome, and small PRs are genuinely fine.
+
+| Start here | |
+|---|---|
+| [Good first issues](https://github.com/elarmuzik1993/llm-parliament/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) | Small, well-scoped, no deep context needed |
+| [Help wanted](https://github.com/elarmuzik1993/llm-parliament/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) | Bigger pieces looking for an owner |
+| [Roadmap](https://github.com/elarmuzik1993/llm-parliament/issues/15) | Where the project is heading |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, the dev loop, and PR expectations |
+| [Discussions](https://github.com/elarmuzik1993/llm-parliament/discussions) | Questions, ideas, and show-and-tell |
+
+The whole test suite runs on mock providers, so you can develop and test
+without an API key or a running Ollama:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest -q
+parliament ask "What should we test first?" --mock
+```
+
+CI runs `pytest` and `ruff` on Linux, macOS, and Windows across Python
+3.11–3.13, so a PR gets checked on platforms you may not have.
+
+### For AI agents and automated tools
+
+This repo is meant to be navigable without reading every file:
+
+- **[AGENTS.md](AGENTS.md)** — the machine-readable source of truth: repository
+  layout, the debate pipeline, threading model, config precedence, conventions,
+  and step-by-step recipes for adding a provider or a slash command.
+  `CLAUDE.md` and `GEMINI.md` are pointers to it.
+- **[docs/hansard-schema.md](docs/hansard-schema.md)** — the JSON schema emitted
+  by `parliament ask --json`, with `jq` recipes.
+- **`--mock`** — every entry point accepts it, giving deterministic output with
+  no network access, which makes the project safe to run in a sandbox.
+- **Project Layout** below and the table in `CONTRIBUTING.md` map change areas
+  to the files that own them.
 
 ## Disclaimer
 

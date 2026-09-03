@@ -10,6 +10,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `parliament ask --json` now prints the complete Hansard object for scripts,
   with `docs/hansard-schema.md` documenting the fields and common `jq` recipes.
+- **CI** — `.github/workflows/ci.yml` runs `ruff` plus the full pytest suite on
+  Linux, macOS, and Windows across Python 3.11-3.13 for every push and PR.
+- Issue chooser links (`.github/ISSUE_TEMPLATE/config.yml`) pointing at good
+  first issues, Discussions, the security policy, and the contributing guide.
+
+### Changed
+
+- `CONTRIBUTING.md` expanded — non-code ways to help, mock-only dev loop, a
+  change-area-to-file map, recipes for adding a provider or slash command, and
+  an explicit PR checklist.
+- README gained CI / PRs-welcome / good-first-issue / help-wanted badges, a
+  Contributing section, and a "For AI agents and automated tools" section.
+- AGENTS.md repository layout now lists `first_run.py`, `presets.py`,
+  `providers/errors.py`, `docs/`, and `.github/`.
+
+### Fixed
+
+- README development setup installed the non-existent `all` extra
+  (`pip install -e ".[all,dev]"`); it now installs `".[dev]"`.
 
 ## [0.2.0] — 2026-05-19
 

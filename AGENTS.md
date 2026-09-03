@@ -32,6 +32,8 @@ src/parliament/
   commands.py         Slash-command registry (/update, /doctor, /history, /copy, …)
   config.py           YAML config loading, key management, resolve_* helpers
   doctor.py           Health check logic (Python, curses, terminal, providers, Ollama)
+  first_run.py        First-run environment detection + config wizard
+  presets.py          Environment-aware first-run config presets
   model_catalog.py    Known model presets + tier data for pickers
   core/
     parliament.py     Parliament orchestrator — ask() coroutine, member/provider wiring
@@ -43,6 +45,7 @@ src/parliament/
     division.py       Phase 3 — Speaker synthesises; parse_synthesis() lives here
   providers/
     base.py           Provider ABC
+    errors.py         Human-readable formatting for provider exceptions
     anthropic_provider.py
     google_provider.py
     openai_provider.py   (also used for Ollama via base_url override)
@@ -55,9 +58,15 @@ src/parliament/
     hansard.py        HansardLevel enum, render_markdown(), render_terminal()
 
 tests/               Unit tests (pytest + pytest-asyncio)
+docs/
+  hansard-schema.md   JSON schema emitted by `parliament ask --json`
+  superpowers/        Historical design plans and specs (not shipped in the sdist)
 config.example.yaml  Default template — fallback if first-run wizard fails
 scripts/
   diagnose-render.py  Render diagnostic — colors, spinner, terminal detection
+.github/
+  workflows/ci.yml    CI — ruff + pytest on Linux/macOS/Windows, Python 3.11-3.13
+  ISSUE_TEMPLATE/     Bug report, feature request, and the issue chooser links
 ```
 
 ---
@@ -100,10 +109,24 @@ All `resolve_*` helpers in `config.py` follow: CLI flag > env var > config YAML 
 
 ## Development conventions
 
+### Contribution workflow
+
+`CONTRIBUTING.md` is the human-facing entry point: setup, the dev loop, recipes,
+and PR expectations. Both must stay true — if you change a convention here,
+check whether `CONTRIBUTING.md` repeats it.
+
+Every PR runs `.github/workflows/ci.yml`: `ruff check .` on Linux, and
+`python -m pytest -q` on Linux (3.11/3.12/3.13), macOS, and Windows. Run both
+locally before pushing.
+
+Issues carry `good first issue` and `help wanted` labels; small, well-scoped
+gaps should be filed as issues with those labels rather than fixed silently, so
+that new contributors have somewhere to land.
+
 ### Testing
 
 ```bash
-python -m pytest -q          # 400 tests expected (as of v0.2.0)
+python -m pytest -q          # 401 tests expected (as of v0.2.0)
 ruff check .                 # must be clean before any commit
 ```
 
@@ -194,4 +217,4 @@ Config is outside the repo — never committed. Only `config.example.yaml` ships
 ## Current release
 
 `v0.2.0` — tagged `cd6bd45`, published to PyPI 2026-05-19.
-400 tests passing, ruff clean. See `CHANGELOG.md` for full history.
+401 tests passing, ruff clean. See `CHANGELOG.md` for full history.
