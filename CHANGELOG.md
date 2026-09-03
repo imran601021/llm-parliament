@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`parliament --version`** — prints the installed version and exits 0, via
+  Click's `version_option` (also exposed as `-V`); the version comes from
+  `parliament.__version__`, which is read from package metadata so it cannot
+  drift from `pyproject.toml`, falling back to `"unknown"` when running from an
+  uninstalled source tree. `parliament doctor` reports it first, ahead of the
+  Python line. Fixes #19. The `"unknown"` fallback and four of the tests come
+  from @dchaudhari7177's #25.
 - `parliament ask --json` now prints the complete Hansard object for scripts,
   with `docs/hansard-schema.md` documenting the fields and common `jq` recipes.
 - **CI** — `.github/workflows/ci.yml` runs `ruff` plus the full pytest suite on

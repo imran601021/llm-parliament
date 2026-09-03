@@ -19,7 +19,7 @@ labels: bug
 - OS:
 - Python version (`python --version`):
 - Install method (pipx / pip / editable):
-- llm-parliament version (`pipx list` or `pip show llm-parliament`):
+- llm-parliament version (`parliament --version`):
 
 ## `parliament doctor` output
 

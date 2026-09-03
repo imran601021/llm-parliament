@@ -12,6 +12,39 @@ _LIVE_DEBATE_MARKER = "Debate"
 _LIVE_DIVISION_MARKER = "Division"
 
 
+def test_version_flag_prints_version():
+    """`parliament --version` prints the installed version and exits 0."""
+    from parliament import __version__
+
+    result = CliRunner().invoke(cli.main, ["--version"])
+    assert result.exit_code == 0
+    assert __version__ in result.output
+
+
+def test_short_version_flag_matches_the_long_one():
+    """`-V` is the same option, so its output must be byte-identical."""
+    runner = CliRunner()
+
+    assert runner.invoke(cli.main, ["-V"]).output == runner.invoke(cli.main, ["--version"]).output
+
+
+def test_version_is_importable_from_the_package():
+    import parliament
+
+    assert isinstance(parliament.__version__, str)
+    assert parliament.__version__
+    assert "__version__" in parliament.__all__
+
+
+def test_version_matches_installed_metadata():
+    """It is read from metadata, so it cannot drift from pyproject.toml."""
+    from importlib.metadata import version
+
+    from parliament import __version__
+
+    assert __version__ == version("llm-parliament")
+
+
 def test_bare_command_launches_tui(monkeypatch):
     calls = {}
 
