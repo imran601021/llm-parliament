@@ -4,6 +4,7 @@ The DebateRenderer protocol decouples Parliament.ask from any specific UI.
 Concrete implementations:
 
   - SilentRenderer:    no-op fallback for callers that explicitly need one.
+  - JsonDiagnosticsRenderer: no live UI, but failures still reach stderr.
   - RichLiveRenderer:  Rich-based, used by the `parliament ask` CLI command.
   - CursesLiveRenderer: curses-based, used by the interactive TUI.
 
@@ -75,6 +76,7 @@ __all__ = [
     "SilentRenderer",
     "build_renderer",
     "RichLiveRenderer",
+    "JsonDiagnosticsRenderer",
 ]
 
 
@@ -83,6 +85,9 @@ def __getattr__(name: str):  # pragma: no cover - thin re-export shim
     if name == "RichLiveRenderer":
         from parliament.render.cli_live import RichLiveRenderer
         return RichLiveRenderer
+    if name == "JsonDiagnosticsRenderer":
+        from parliament.render.cli_live import JsonDiagnosticsRenderer
+        return JsonDiagnosticsRenderer
     if name == "CursesLiveRenderer":
         from parliament.render.tui_live import CursesLiveRenderer
         return CursesLiveRenderer

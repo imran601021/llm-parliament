@@ -191,6 +191,74 @@ def test_ask_json_outputs_machine_readable_hansard(monkeypatch):
     assert "Parliament Verdict" not in result.output
 
 
+def _patch_one_failing_mock(monkeypatch, failing_model: str = "mock-v3"):
+    """Make a single --mock member's provider raise, leaving the other two healthy."""
+    import parliament.providers.mock as mock_mod
+
+    base = mock_mod.MockProvider
+
+    class OneFailingProvider(base):
+        def __init__(self, model: str = "mock", **kwargs):
+            super().__init__(model=model, **kwargs)
+            self._should_fail = model == failing_model
+
+        async def generate(self, *args, **kwargs):
+            if self._should_fail:
+                raise RuntimeError("synthetic provider outage")
+            return await super().generate(*args, **kwargs)
+
+    monkeypatch.setattr(mock_mod, "MockProvider", OneFailingProvider)
+
+
+def test_ask_json_reports_dropped_member_on_stderr(monkeypatch):
+    """A degraded debate must not look complete: stdout stays JSON, stderr explains."""
+    monkeypatch.delenv("PARLIAMENT_SHOW_DEBATE", raising=False)
+    _patch_one_failing_mock(monkeypatch)
+
+    result = CliRunner().invoke(cli.main, ["ask", "--mock", "--json", "Test?"])
+
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.stdout)
+    # Three members configured, only two survived to answer.
+    assert len(data["members"]) == 3
+    assert [r["member_name"] for r in data["first_reading"]] == ["Mock-A", "Mock-B"]
+    # The drop-out is reported, and the diagnostic stays off stdout.
+    assert "Mock-C" in result.stderr
+    assert "failed" in result.stderr
+    assert "failed" not in result.stdout
+
+
+def test_ask_json_keeps_errors_off_stdout(monkeypatch):
+    """`--json | jq` must get a parse-able stream or nothing — never an error string."""
+    monkeypatch.delenv("PARLIAMENT_SHOW_DEBATE", raising=False)
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("config is broken")
+
+    monkeypatch.setattr(cli, "load_config", _boom)
+
+    result = CliRunner().invoke(cli.main, ["ask", "--json", "Test?"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert "config is broken" in result.stderr
+
+
+def test_ask_without_json_keeps_errors_on_stdout(monkeypatch):
+    """Regression guard: non-JSON runs are unchanged by the stderr routing."""
+    monkeypatch.delenv("PARLIAMENT_SHOW_DEBATE", raising=False)
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("config is broken")
+
+    monkeypatch.setattr(cli, "load_config", _boom)
+
+    result = CliRunner().invoke(cli.main, ["ask", "Test?"])
+
+    assert result.exit_code == 1
+    assert "config is broken" in result.stdout
+
+
 # ── New hansard-level tests ──────────────────────────────────────────────────
 
 _VERDICT_RECOMMENDATION_MARKER = "✓ Recommendation"

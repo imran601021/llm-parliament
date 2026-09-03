@@ -38,7 +38,7 @@ parliament ask "Should we split this service?" --mock --json
 | `name` | `string` | Display name used in debate output. |
 | `provider_name` | `string` | Provider key, such as `ollama`, `anthropic`, `openai`, `google`, or `mock`. |
 | `model` | `string` | Provider model identifier. |
-| `tier` | `number` | Model capability tier resolved from the model catalog. |
+| `tier` | `number` | Model capability tier resolved from the model catalog. **Lower is stronger** — the Speaker is chosen from the lowest tier present. |
 
 ## `Response`
 
@@ -65,6 +65,28 @@ four parts shown in the normal terminal verdict.
 | `recommendation` | `string` | Final recommended course of action. |
 | `raw` | `string` | Full unparsed Speaker output before the four fields above were extracted. |
 
+## Degraded sessions
+
+`first_reading` and `debate` may hold **fewer entries than `members`**. When a
+provider fails, that member is dropped and the session continues as long as at
+least two members respond — so a Hansard can name three members but carry only
+two responses.
+
+Two consequences for consumers:
+
+- Join on `member_name`, never by array index. `members[i]` and
+  `first_reading[i]` are not guaranteed to be the same member.
+- The failure *reason* is not in the JSON. It is written to **stderr**, so
+  capture that stream if you need it: `parliament ask ... --json 2>errors.log`.
+
+To detect a degraded run in a script:
+
+```bash
+parliament ask "Should we split this service?" --json > hansard.json
+jq -e '(.members | length) == (.first_reading | length)' hansard.json >/dev/null \
+  || echo "warning: one or more members dropped out"
+```
+
 ## Example shape
 
 ```json
@@ -75,15 +97,15 @@ four parts shown in the normal terminal verdict.
   },
   "members": [
     {
-      "name": "Mock-1",
+      "name": "Mock-A",
       "provider_name": "mock",
-      "model": "mock",
+      "model": "mock-v1",
       "tier": 3
     }
   ],
   "first_reading": [
     {
-      "member_name": "Mock-1",
+      "member_name": "Mock-A",
       "content": "Initial analysis...",
       "phase": "first_reading",
       "duration_ms": 12
@@ -91,7 +113,7 @@ four parts shown in the normal terminal verdict.
   ],
   "debate": [
     {
-      "member_name": "Mock-1",
+      "member_name": "Mock-A",
       "content": "Critique...",
       "phase": "debate",
       "duration_ms": 9

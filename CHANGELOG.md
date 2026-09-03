@@ -11,6 +11,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `parliament ask --json` now prints the complete Hansard object for scripts,
   with `docs/hansard-schema.md` documenting the fields and common `jq` recipes.
 
+### Fixed
+
+- `parliament ask --json` no longer hides member failures. A provider that
+  drops out mid-debate is reported on stderr instead of silently shrinking the
+  response arrays.
+- `parliament ask --json` now writes warnings and errors to stderr, keeping
+  stdout a clean JSON document for `jq` and other consumers.
+
 ## [0.2.0] — 2026-05-19
 
 ### Added
