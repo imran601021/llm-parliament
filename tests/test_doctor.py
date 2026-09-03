@@ -43,6 +43,25 @@ def test_doctor_output_includes_version(monkeypatch, tmp_path):
     assert __version__ in result.output
 
 
+def test_doctor_reports_the_version_before_the_python_line(monkeypatch, tmp_path):
+    """`doctor` output is what bug reports paste, so the version reads first."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    import httpx
+
+    def unreachable(url, timeout=None):
+        raise httpx.ConnectError("no ollama")
+
+    monkeypatch.setattr(httpx, "get", unreachable)
+
+    from parliament import __version__, cli
+
+    result = CliRunner().invoke(cli.main, ["doctor"])
+
+    assert result.exit_code == 0, result.output
+    assert result.output.index(__version__) < result.output.index("Python")
+
+
 def test_check_python_version_passes_on_supported_version(monkeypatch):
     from parliament import doctor
 
