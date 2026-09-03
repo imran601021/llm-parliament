@@ -38,11 +38,14 @@ def create_provider(provider_name: str, model: str, **kwargs) -> Provider:
             module = importlib.import_module(module_path)
             cls = getattr(module, class_name)
             return cls(model=model, **kwargs)
-        except ImportError:
+        except ImportError as err:
+            # `from err` on purpose: the original names the module that actually
+            # failed to import, which separates "the SDK is not installed" from
+            # "the SDK is installed and one of its own imports is broken".
             raise ImportError(
                 f"Cloud provider '{provider_name}' requires its SDK. "
                 f"Install it: pip install llm-parliament[{provider_name}]"
-            )
+            ) from err
 
     raise ValueError(f"Unknown provider: '{provider_name}'")
 

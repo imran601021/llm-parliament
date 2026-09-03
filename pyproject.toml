@@ -81,3 +81,9 @@ testpaths = ["tests"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+
+[tool.ruff.lint]
+# B904 is not in ruff's default set, so nothing enforced this before: `ruff
+# check .` was green while ten `raise`s inside `except` blocks discarded the
+# error that caused them. Enforcing it here is what stops an eleventh.
+extend-select = ["B904"]
