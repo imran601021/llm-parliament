@@ -29,6 +29,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - README development setup installed the non-existent `all` extra
   (`pip install -e ".[all,dev]"`); it now installs `".[dev]"`.
+- Dev extra pins `ruff>=0.8,<0.16`. Ruff 0.16 widened its default rule set, so
+  an unpinned install reported 97 findings on unchanged code while an older one
+  reported none; see #30 for the decision on adopting the new defaults.
 - README and AGENTS.md still documented `verdict` as the built-in default
   Hansard level; it has been `minimal` since 0.2.0. Both now also state that
   saved `.md` files are always written at `archive` level.
