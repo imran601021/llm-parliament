@@ -245,7 +245,17 @@ class JsonDiagnosticsRenderer(DebateRenderer):
     def emit(self, event: ProgressEvent) -> None:
         if event.kind != "failed":
             return
-        error = event.error or "unknown error"
-        self._console.print(
-            f"[red]{event.member_name} failed during {event.phase}: {error}[/red]"
-        )
+        try:
+            error = event.error or "unknown error"
+            # Rendered as Text, not markup: provider error strings are external
+            # input and routinely carry brackets. As a markup string, "[/red]"
+            # raises MarkupError and "[user_id]" is silently swallowed — either
+            # way the diagnostic this renderer exists to deliver is lost.
+            self._console.print(
+                Text(
+                    f"{event.member_name} failed during {event.phase}: {error}",
+                    style="red",
+                )
+            )
+        except Exception:  # pragma: no cover - never break a debate
+            return

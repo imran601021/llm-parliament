@@ -213,3 +213,24 @@ def test_json_diagnostics_renderer_tolerates_missing_error_text(recording_consol
     output = _drain(recording_console)
     assert "Gamma" in output
     assert "unknown error" in output
+
+
+def test_json_diagnostics_renderer_survives_markup_in_error_text(recording_console):
+    """Provider errors carry brackets; markup must never raise or eat content."""
+    console, _ = recording_console
+    r = JsonDiagnosticsRenderer(console=console)
+    with r:
+        # "[/red]" is an unmatched closing tag — fatal if parsed as markup.
+        r.emit(
+            ProgressEvent(
+                phase="debate",
+                member_name="Beta",
+                kind="failed",
+                error="timeout in [/red] handler for [user_id]",
+            )
+        )
+    output = _drain(recording_console)
+    assert "Beta" in output
+    # Both bracketed spans survive verbatim rather than being swallowed.
+    assert "[/red]" in output
+    assert "[user_id]" in output

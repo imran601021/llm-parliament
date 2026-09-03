@@ -6,6 +6,7 @@ import asyncio
 import os
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 import click
 from rich.console import Console
@@ -121,7 +122,7 @@ def main(ctx: click.Context, config_path: Path | None, speaker: str | None, mock
         raise SystemExit(1)
 
 
-def _ask_error(json_output: bool, message: str) -> None:
+def _ask_error(json_output: bool, message: str) -> NoReturn:
     """Print an `ask` failure and exit 1.
 
     Errors can be raised before the per-run diagnostics console is bound (a bad
