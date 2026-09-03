@@ -12,6 +12,15 @@ _LIVE_DEBATE_MARKER = "Debate"
 _LIVE_DIVISION_MARKER = "Division"
 
 
+def test_version_flag_prints_version():
+    """`parliament --version` prints the installed version and exits 0."""
+    from parliament import __version__
+
+    result = CliRunner().invoke(cli.main, ["--version"])
+    assert result.exit_code == 0
+    assert __version__ in result.output
+
+
 def test_bare_command_launches_tui(monkeypatch):
     calls = {}
 
