@@ -168,9 +168,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```bash
 python -m pytest -q          # 433 tests expected (as of #34)
 ruff check .                 # must be clean before any commit
+mypy src/parliament           # must pass before any commit
 ```
-
-Dev deps (`pytest`, `pytest-asyncio`, `ruff`) are in `pyproject.toml` under
+Dev deps (`pytest`, `pytest-asyncio`, `ruff`, `mypy`) are in `pyproject.toml` under
 `[project.optional-dependencies] dev`. Install via `pipx inject` or `pip install -e ".[dev]"`.
 
 ### Code style

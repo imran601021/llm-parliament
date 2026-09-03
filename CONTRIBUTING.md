@@ -104,10 +104,10 @@ parliament doctor                 # health check
 ```bash
 python -m pytest -q         # full suite — must be green
 ruff check .                # must be clean
+mypy src/parliament         # must pass
 ```
 
-Both run in CI on Linux, macOS, and Windows across Python 3.11–3.13. Running
-them locally before pushing means CI rarely surprises you.
+All three run in CI; pytest runs on Linux, macOS, and Windows across Python 3.11–3.13, while Ruff and mypy run on Linux.
 
 Useful subsets while iterating:
 
@@ -171,6 +171,7 @@ Before you open it:
 - [ ] The branch is cut from current `main`
 - [ ] `python -m pytest -q` passes
 - [ ] `ruff check .` is clean
+- [ ] `mypy src/parliament` passes
 - [ ] New behaviour has a test; a bug fix has a regression test
 - [ ] `CHANGELOG.md` updated under `## [Unreleased]` if the change is user-visible
 - [ ] No debug prints, no commented-out code

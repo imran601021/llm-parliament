@@ -51,6 +51,8 @@ dev = [
     # cannot tell which findings are theirs. Lift this once #30 decides
     # whether to adopt the new defaults or declare the rule set explicitly.
     "ruff>=0.8,<0.16",
+    "mypy>=1.0,<2.0",
+    "types-PyYAML"
 ]
 
 [project.scripts]
@@ -82,12 +84,13 @@ testpaths = ["tests"]
 target-version = "py311"
 line-length = 100
 
+
 [tool.ruff.lint]
 # Neither rule is in ruff's default set, so nothing enforced either before.
 # B904: `ruff check .` was green while ten `raise`s inside `except` blocks
 # discarded the error that caused them. Enforcing it is what stops an
 # eleventh. I: import sorting, so the order stops being a matter of taste.
-#
+
 # `extend-select`, not `select`: this adds both rules to whatever ruff
 # enforces by default rather than replacing it. `select = ["B904", "I"]` would
 # pin the rule set to the four families ruff 0.8 defaulted to, silencing
@@ -96,3 +99,6 @@ line-length = 100
 # it, `extend-select` picks the new defaults up and `select` would have
 # hidden them.
 extend-select = ["B904", "I"]
+
+[tool.mypy]
+ignore_missing_imports = true
