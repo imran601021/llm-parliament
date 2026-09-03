@@ -24,6 +24,25 @@ def test_doctor_command_runs_and_exits_zero_on_a_working_install(monkeypatch, tm
     assert "Environment" in result.output or "Doctor" in result.output
 
 
+def test_doctor_output_includes_version(monkeypatch, tmp_path):
+    """The doctor report carries the package version so bug reports include it."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    import httpx
+
+    def unreachable(url, timeout=None):
+        raise httpx.ConnectError("no ollama")
+
+    monkeypatch.setattr(httpx, "get", unreachable)
+
+    from parliament import __version__, cli
+
+    result = CliRunner().invoke(cli.main, ["doctor"])
+
+    assert result.exit_code == 0, result.output
+    assert __version__ in result.output
+
+
 def test_check_python_version_passes_on_supported_version(monkeypatch):
     from parliament import doctor
 
