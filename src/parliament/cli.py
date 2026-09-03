@@ -13,21 +13,21 @@ from rich.panel import Panel
 from rich.table import Table
 
 from parliament.config import (
-    KEYS_FILE,
     KEY_PROVIDERS,
+    KEYS_FILE,
     build_parliament_from_config,
     get_keyring_key,
     load_config,
     load_keys,
     migrate_keys_to_keyring,
+    remove_key,
     resolve_hansard_level,
     resolve_show_debate,
     save_key,
-    remove_key,
 )
-from parliament.core.model_tiers import get_tier_label, detect_gap
+from parliament.core.model_tiers import detect_gap, get_tier_label
 from parliament.core.parliament import Parliament
-from parliament.render import build_renderer
+from parliament.render import SilentRenderer, build_renderer
 from parliament.render.hansard import HansardLevel, render_terminal
 
 console = (
@@ -131,6 +131,7 @@ def main(ctx: click.Context, config_path: Path | None, speaker: str | None, mock
     help="Show the debate process live (default: on; override with config or PARLIAMENT_SHOW_DEBATE)",
 )
 @click.option("--mock", is_flag=True, help="Use mock providers (dev/testing)")
+@click.option("--json", "json_output", is_flag=True, help="Print the full Hansard as JSON")
 def ask(
     question: str,
     config_path: Path | None,
@@ -139,12 +140,13 @@ def ask(
     verbose: bool,
     show_debate: bool | None,
     mock: bool,
+    json_output: bool,
 ):
     """Ask Parliament a question."""
     try:
         if mock:
-            from parliament.providers.mock import MockProvider
             from parliament.core.types import Member
+            from parliament.providers.mock import MockProvider
 
             members = [
                 Member(name="Mock-A", provider_name="mock", model="mock-v1", tier=3),
@@ -169,7 +171,11 @@ def ask(
             level = HansardLevel.FULL
 
         show = resolve_show_debate(cli_flag=show_debate, config=config)
-        renderer = build_renderer(show_debate=show, mode="cli", console=console)
+        renderer = SilentRenderer() if json_output else build_renderer(
+            show_debate=show,
+            mode="cli",
+            console=console,
+        )
 
         p = Parliament(
             members=members,
@@ -178,18 +184,20 @@ def ask(
             speaker_override=speaker,
         )
 
-        for warning in p.check_gaps():
-            console.print(f"[yellow]Warning: {warning}[/yellow]")
+        if not json_output:
+            for warning in p.check_gaps():
+                console.print(f"[yellow]Warning: {warning}[/yellow]")
 
-        member_names = " | ".join(m.name for m in members)
-        bill = question if len(question) <= 100 else question[:97].rstrip() + "..."
-        console.print()
-        console.print(Panel.fit(
-            f"[bold]Question[/bold]\n{bill}\n\n[dim]Members: {member_names}[/dim]",
-            title="Parliament Session",
-            border_style="bright_blue",
-        ))
-        console.print()
+        if not json_output:
+            member_names = " | ".join(m.name for m in members)
+            bill = question if len(question) <= 100 else question[:97].rstrip() + "..."
+            console.print()
+            console.print(Panel.fit(
+                f"[bold]Question[/bold]\n{bill}\n\n[dim]Members: {member_names}[/dim]",
+                title="Parliament Session",
+                border_style="bright_blue",
+            ))
+            console.print()
 
         if sys.platform == "win32":
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -201,7 +209,10 @@ def ask(
                 console.print("[yellow]Debate cancelled.[/yellow]")
                 raise SystemExit(130)
 
-        render_terminal(hansard, level, console)
+        if json_output:
+            click.echo(hansard.to_json())
+        else:
+            render_terminal(hansard, level, console)
 
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")

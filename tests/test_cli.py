@@ -1,9 +1,10 @@
 """CLI behavior tests."""
 
+import json
+
 from click.testing import CliRunner
 
 from parliament import cli
-
 
 # Sentinel strings the live renderer prints on each phase header.
 _LIVE_FIRST_READING_MARKER = "First Reading"
@@ -174,6 +175,22 @@ def test_ask_verbose_coexists_with_show_debate(monkeypatch):
     assert result.output.count("First Reading") >= 2
 
 
+def test_ask_json_outputs_machine_readable_hansard(monkeypatch):
+    """--json prints only the serialized Hansard object, with no Rich panels."""
+    monkeypatch.delenv("PARLIAMENT_SHOW_DEBATE", raising=False)
+
+    result = CliRunner().invoke(cli.main, ["ask", "--mock", "--json", "Test?"])
+
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)
+    assert data["bill"]["content"] == "Test?"
+    assert [member["name"] for member in data["members"]] == ["Mock-A", "Mock-B", "Mock-C"]
+    assert data["first_reading"][0]["phase"] == "first_reading"
+    assert data["debate"][0]["phase"] == "debate"
+    assert data["synthesis"]["recommendation"]
+    assert "Parliament Verdict" not in result.output
+
+
 # ── New hansard-level tests ──────────────────────────────────────────────────
 
 _VERDICT_RECOMMENDATION_MARKER = "✓ Recommendation"
@@ -280,8 +297,9 @@ def test_update_cli_non_editable_install_exits_one(monkeypatch):
 
 
 def test_update_cli_pull_failure_exits_one(monkeypatch):
-    import parliament.commands as cmd_mod
     from pathlib import Path
+
+    import parliament.commands as cmd_mod
 
     monkeypatch.setattr(cmd_mod, "_detect_install", lambda: ("editable", Path("/tmp/fake")))
 
