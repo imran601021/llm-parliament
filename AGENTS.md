@@ -99,7 +99,10 @@ The renderer (`DebateRenderer`) receives these events and draws to screen.
 
 `HansardLevel` in `render/hansard.py` is the single source of truth.
 Four levels (`minimal` → `verdict` → `archive` → `full`), strictly monotonic.
-Precedence for resolution: CLI flag > env var > config > default (`verdict`).
+Precedence for resolution: CLI flag > env var > config > default (`minimal` —
+`HansardLevel.parse` falls back to it for `None` and unknown values).
+Saved `.md` files are written at `archive` regardless of the display level
+(`tui.py::_save_hansard`).
 
 ### Config precedence
 

@@ -29,6 +29,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - README development setup installed the non-existent `all` extra
   (`pip install -e ".[all,dev]"`); it now installs `".[dev]"`.
+- README and AGENTS.md still documented `verdict` as the built-in default
+  Hansard level; it has been `minimal` since 0.2.0. Both now also state that
+  saved `.md` files are always written at `archive` level.
 
 ## [0.2.0] — 2026-05-19
 

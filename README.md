@@ -359,17 +359,18 @@ The view is toggleable via three precedence-ordered sources:
 
 ### Hansard detail levels
 
-By default, both the post-run terminal output and the saved `.md` file
-contain the four-part Speaker synthesis (Consensus, Split, Risks,
-Recommendation) — no LLM transcripts. Older runs that included the full
-debate text by default are now opt-in via `--hansard=full`.
+By default the post-run terminal output is `minimal` — the Speaker's
+recommendation only. Saved `.md` files are always written at `archive` level
+(the full four-part synthesis plus frontmatter) regardless of the display
+level, so nothing is lost from the record. Older runs that printed the full
+debate text are now opt-in via `--hansard=full`.
 
 Four levels:
 
 | Level | Includes | Roughly |
 |---|---|---|
-| `minimal` | Recommendation only | one paragraph — "just tell me what to do" |
-| `verdict` | Full four-part synthesis | **default** — concise but complete |
+| `minimal` | Recommendation only | **default** — one paragraph, "just tell me what to do" |
+| `verdict` | Full four-part synthesis | concise but complete |
 | `archive` | + YAML frontmatter + session footer | searchable in Obsidian, no walls of text |
 | `full` | + First Reading + Debate transcripts | today's full record (≈ what `--verbose` used to print) |
 
@@ -380,7 +381,7 @@ Set the level via three precedence-ordered sources:
 | 1 (highest) | CLI flag | `parliament ask "..." --hansard archive` |
 | 2 | Environment variable | `PARLIAMENT_HANSARD_LEVEL=full parliament ask "..."` |
 | 3 | YAML config | `hansard:\n  level: archive` |
-| 4 (default) | Built-in | `verdict` |
+| 4 (default) | Built-in | `minimal` |
 
 `--verbose` continues to work; it's an alias for `--hansard=full`.
 The level applies to the saved `.md` file **and** the post-run terminal
