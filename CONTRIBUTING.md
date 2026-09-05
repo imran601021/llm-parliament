@@ -189,6 +189,16 @@ optional scope (`fix(tui): …`). Not enforced by a bot; it just keeps
 
 AI-assisted contributions are fine. Review the output before you send it — you
 are the author of your PR, and you should be able to explain every line in it.
+That includes the git identity: coding agents often default to committing as
+`claude <noreply@anthropic.com>` (or similar) when no local git identity is
+configured, which credits the tool as author instead of you in GitHub's
+contributor graphs. Set `git config user.name`/`user.email` to your own
+before committing, and if you want to credit the assistant, add it as a
+trailer instead of the author:
+
+```
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
 
 ## Reporting bugs
 
