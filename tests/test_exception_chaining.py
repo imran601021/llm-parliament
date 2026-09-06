@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from click.testing import CliRunner
 
-from parliament import cli
 import parliament.providers as providers_module
+from parliament import cli
 from parliament.providers import create_provider
 
 
