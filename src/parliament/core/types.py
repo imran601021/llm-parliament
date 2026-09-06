@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
 import json
+import uuid
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 
 
 @dataclass

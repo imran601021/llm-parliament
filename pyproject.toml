@@ -81,3 +81,12 @@ testpaths = ["tests"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+
+[tool.ruff.lint]
+# `extend-select`, not `select`: this adds import sorting to whatever ruff
+# enforces by default rather than replacing it. `select = ["I", ...]` would pin
+# the rule set to the four families ruff 0.8 defaulted to, silencing everything
+# a newer ruff has learned since. That matters because the `ruff>=0.8,<0.16`
+# dev pin above is deliberately temporary -- when #30 lifts it, `extend-select`
+# picks the new defaults up and `select` would have hidden them.
+extend-select = ["I"]

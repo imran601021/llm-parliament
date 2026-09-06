@@ -8,7 +8,6 @@ from parliament.first_run import Environment
 from parliament.model_catalog import OllamaModel
 from parliament.presets import select_preset
 
-
 BASE_ENV = Environment(
     anthropic_key=False,
     openai_key=False,

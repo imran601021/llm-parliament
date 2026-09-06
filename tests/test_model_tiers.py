@@ -1,7 +1,7 @@
 """Test model tier system."""
 
+from parliament.core.model_tiers import detect_gap, get_tier, get_tier_label
 from parliament.core.types import Member
-from parliament.core.model_tiers import get_tier, get_tier_label, detect_gap
 
 
 def test_known_models():

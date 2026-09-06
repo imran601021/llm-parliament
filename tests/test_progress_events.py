@@ -14,7 +14,6 @@ from parliament.core.types import (
 from parliament.providers.base import Provider
 from parliament.providers.mock import MockProvider
 
-
 # ---------------- ProgressEvent dataclass shape ----------------
 
 

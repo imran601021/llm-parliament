@@ -1,6 +1,7 @@
 """Test core types — serialization round-trips, construction."""
 
 import json
+
 from parliament.core.types import Bill, Hansard, Member, Response, Synthesis
 
 
