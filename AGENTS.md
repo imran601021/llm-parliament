@@ -126,6 +126,20 @@ Issues carry `good first issue` and `help wanted` labels; small, well-scoped
 gaps should be filed as issues with those labels rather than fixed silently, so
 that new contributors have somewhere to land.
 
+### Commit identity
+
+If you are an agent committing on someone's behalf, do not commit as yourself.
+Before running `git commit`, make sure `git config user.name` / `user.email`
+resolve to the human you're working for, not the agent's own default identity
+(e.g. `claude <noreply@anthropic.com>`) — an unconfigured identity gets
+attributed to whatever account GitHub matches that email to, not to the person
+who actually did the work. Credit the assistant with a trailer instead of as
+author:
+
+```
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
 ### Testing
 
 ```bash
