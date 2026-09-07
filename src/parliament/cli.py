@@ -118,13 +118,20 @@ def main(ctx: click.Context, config_path: Path | None, speaker: str | None, mock
         run_tui(settings, config, config_path, speaker_override=speaker, mock=mock)
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        # The message above is the whole explanation -- a missing file needs no
+        # traceback -- so the cause is suppressed rather than chained.
+        raise SystemExit(1) from None
     except Exception as e:
+        # The catch-all is where an unexpected failure lands, so the cause is
+        # kept: `Error: {e}` alone is often one line about something three
+        # frames down, and the chain is what a bug report needs.
         console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
-def _ask_error(json_output: bool, message: str) -> NoReturn:
+def _ask_error(
+    json_output: bool, message: str, *, cause: BaseException | None = None
+) -> NoReturn:
     """Print an `ask` failure and exit 1.
 
     Errors can be raised before the per-run diagnostics console is bound (a bad
@@ -132,9 +139,20 @@ def _ask_error(json_output: bool, message: str) -> NoReturn:
     local. Under --json this keeps stdout a clean JSON document: a consumer
     piping to jq gets the message on stderr and a non-zero exit, not a parse
     error.
+
+    ``cause`` decides whether the `SystemExit` carries the error that caused it.
+    The default is to suppress: for the failures that already print a complete
+    explanation -- a missing config file, an uninstalled SDK -- a chained
+    traceback is noise. Callers that catch a genuinely unexpected error pass
+    ``cause=e`` instead, because there ``Error: {e}`` is usually one line about
+    something three frames down and the chain is what a bug report needs.
+
+    Passing this explicitly matters because implicit chaining would otherwise
+    make the choice for us: a bare ``raise`` inside a helper called from an
+    ``except`` block sets ``__context__`` on every path, friendly or not.
     """
     (err_console if json_output else console).print(message)
-    raise SystemExit(1)
+    raise SystemExit(1) from cause
 
 
 @main.command()
@@ -234,7 +252,8 @@ def ask(
                 hansard = asyncio.run(p.ask(question))
             except KeyboardInterrupt:
                 diag.print("[yellow]Debate cancelled.[/yellow]")
-                raise SystemExit(130)
+                # Asked for, not a failure, so there is no cause to carry.
+                raise SystemExit(130) from None
 
         if json_output:
             click.echo(hansard.to_json())
@@ -246,7 +265,7 @@ def ask(
     except ImportError as e:
         _ask_error(json_output, f"[red]{e}[/red]")
     except Exception as e:
-        _ask_error(json_output, f"[red]Error: {e}[/red]")
+        _ask_error(json_output, f"[red]Error: {e}[/red]", cause=e)
 
 
 @main.command()
@@ -257,8 +276,11 @@ def members(config_path: Path | None):
         config = load_config(config_path)
         member_list, _ = build_parliament_from_config(config)
     except Exception as e:
+        # The catch-all is where an unexpected failure lands, so the cause is
+        # kept: `Error: {e}` alone is often one line about something three
+        # frames down, and the chain is what a bug report needs.
         console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
     table = Table(title="Parliament Members", show_lines=False)
     table.add_column("Name", style="bold")
@@ -289,10 +311,15 @@ def tui(config_path: Path | None, speaker: str | None, mock: bool):
         run_tui(settings, config, config_path, speaker_override=speaker, mock=mock)
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        # The message above is the whole explanation -- a missing file needs no
+        # traceback -- so the cause is suppressed rather than chained.
+        raise SystemExit(1) from None
     except Exception as e:
+        # The catch-all is where an unexpected failure lands, so the cause is
+        # kept: `Error: {e}` alone is often one line about something three
+        # frames down, and the chain is what a bug report needs.
         console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
 @main.group()
