@@ -12,10 +12,16 @@ class OpenAIProvider(Provider):
         self,
         model: str = "gpt-4o",
         api_key: str | None = None,
+        base_url: str | None = None,
         timeout: float | None = None,
     ) -> None:
         self.model = model
         self._api_key = api_key
+        # An OpenAI-compatible endpoint -- Groq, Mistral, or anything else
+        # speaking the same API at its own address. None means api.openai.com,
+        # which is what the SDK does with base_url unset, so the default path
+        # is untouched. OllamaProvider already worked this way.
+        self._base_url = base_url
         self._timeout = timeout
         self._client = None
 
@@ -25,6 +31,7 @@ class OpenAIProvider(Provider):
 
             self._client = AsyncOpenAI(
                 api_key=self._api_key,
+                base_url=self._base_url,
                 timeout=self._timeout,
             )
         return self._client

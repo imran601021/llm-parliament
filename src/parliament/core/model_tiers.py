@@ -24,6 +24,13 @@ MODEL_TIERS: dict[str, int] = {
     "llama3.1:70b": 2,
     "mistral-large": 2,
     "qwen2:72b": 2,
+    # Tier 2 — Mistral's hosted API (api.mistral.ai)
+    "mistral-large-latest": 2,
+    "mistral-medium-latest": 2,
+    # Tier 2 — Groq (api.groq.com), same weights as the Ollama names above,
+    # served much faster
+    "llama-3.3-70b-versatile": 2,
+    "qwen-2.5-72b-instruct": 2,
     # Tier 3 — capable
     "llama3.1": 3,
     "llama3.1:8b": 3,
@@ -33,6 +40,9 @@ MODEL_TIERS: dict[str, int] = {
     "mistral:7b": 3,
     "qwen2:7b": 3,
     "gemini-2.5-flash-lite": 3,
+    "mistral-small-latest": 3,
+    "llama-3.1-8b-instant": 3,
+    "qwen-2.5-32b": 3,
     # Tier 4 — small
     "phi3:mini": 4,
     "gemma2:2b": 4,

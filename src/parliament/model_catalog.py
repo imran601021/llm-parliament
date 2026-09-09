@@ -84,24 +84,55 @@ def _http_get_json(req: urllib.request.Request, timeout: float) -> Any:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def fetch_openai_models(api_key: str | None, timeout: float = DEFAULT_TIMEOUT) -> PickerData:
+@dataclass(frozen=True)
+class OpenAICompatible:
+    """A provider that speaks the OpenAI API at a different address.
+
+    Groq and Mistral both serve `GET {base_url}/models` with the same
+    `{"data": [{"id": ...}]}` shape OpenAI does, so discovery is the same
+    request against a different host -- there is no second client to write.
+    """
+
+    base_url: str
+    env_var: str
+
+
+OPENAI_COMPATIBLE: dict[str, OpenAICompatible] = {
+    "openai": OpenAICompatible("https://api.openai.com/v1", "OPENAI_API_KEY"),
+    "groq": OpenAICompatible("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
+    "mistral": OpenAICompatible("https://api.mistral.ai/v1", "MISTRAL_API_KEY"),
+}
+
+
+def fetch_openai_compatible_models(
+    provider: str,
+    api_key: str | None,
+    timeout: float = DEFAULT_TIMEOUT,
+) -> PickerData:
+    spec = OPENAI_COMPATIBLE.get(provider)
+    if spec is None:
+        return PickerData(models=[], notice=f"Unknown provider: {provider}")
     if not api_key:
-        return PickerData(models=[], notice=_no_key_notice("openai", "OPENAI_API_KEY"))
+        return PickerData(models=[], notice=_no_key_notice(provider, spec.env_var))
     req = urllib.request.Request(
-        "https://api.openai.com/v1/models",
+        f"{spec.base_url.rstrip('/')}/models",
         headers={"Authorization": f"Bearer {api_key}"},
     )
     try:
         payload = _http_get_json(req, timeout)
     except urllib.error.HTTPError as e:
-        return PickerData(models=[], notice=f"openai request failed: HTTP {e.code} {e.reason}")
+        return PickerData(models=[], notice=f"{provider} request failed: HTTP {e.code} {e.reason}")
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as e:
-        return PickerData(models=[], notice=f"openai request failed: {type(e).__name__}: {e}")
+        return PickerData(models=[], notice=f"{provider} request failed: {type(e).__name__}: {e}")
     ids = [
         str(m["id"]) for m in payload.get("data", [])
         if isinstance(m, dict) and m.get("id")
     ]
     return PickerData(models=sorted(ids), notice=None)
+
+
+def fetch_openai_models(api_key: str | None, timeout: float = DEFAULT_TIMEOUT) -> PickerData:
+    return fetch_openai_compatible_models("openai", api_key, timeout)
 
 
 def fetch_anthropic_models(api_key: str | None, timeout: float = DEFAULT_TIMEOUT) -> PickerData:
@@ -155,6 +186,21 @@ def fetch_google_models(api_key: str | None, timeout: float = DEFAULT_TIMEOUT) -
     return PickerData(models=sorted(names), notice=None)
 
 
+def openai_compatible_key(provider: str) -> str | None:
+    """The key to discover `provider`'s models with.
+
+    Its own variable first, then OPENAI_API_KEY -- because pointing the openai
+    provider at Groq means the Groq key is already sitting in OPENAI_API_KEY,
+    and `parliament keys set` only knows anthropic, openai and google. Without
+    the fallback the picker would report "no key" to someone whose config
+    works.
+    """
+    spec = OPENAI_COMPATIBLE.get(provider)
+    if spec is None:
+        return None
+    return os.environ.get(spec.env_var) or os.environ.get("OPENAI_API_KEY")
+
+
 def _ollama_base_url(config: dict[str, Any] | None) -> str:
     if not isinstance(config, dict):
         return "http://localhost:11434/v1"
@@ -167,8 +213,8 @@ def picker_data_for(provider: str, config: dict[str, Any] | None = None) -> Pick
     """Return the live PickerData for the given provider."""
     if provider == "ollama":
         return fetch_ollama_models(_ollama_base_url(config))
-    if provider == "openai":
-        return fetch_openai_models(os.environ.get("OPENAI_API_KEY"))
+    if provider in OPENAI_COMPATIBLE:
+        return fetch_openai_compatible_models(provider, openai_compatible_key(provider))
     if provider == "anthropic":
         return fetch_anthropic_models(os.environ.get("ANTHROPIC_API_KEY"))
     if provider == "google":
