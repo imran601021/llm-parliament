@@ -250,6 +250,55 @@ parliament keys migrate   # move existing keys.env entries to the OS keyring
 parliament keys remove openai
 ```
 
+## Optional: OpenAI-compatible providers (Groq, Mistral)
+
+Groq and Mistral serve the OpenAI API at their own addresses, so they need no
+new client — just a key and a `base_url`. Groq has a free tier, which makes it
+a cheap way to add a second opinion to a parliament.
+
+`parliament keys set` knows `anthropic`, `openai` and `google`, so store the
+Groq or Mistral key as the openai one — it is the openai provider that will
+use it:
+
+```bash
+parliament keys set openai gsk_...      # a Groq key
+```
+
+The model picker also reads `GROQ_API_KEY` / `MISTRAL_API_KEY` if you would
+rather keep them separate, and falls back to `OPENAI_API_KEY` when they are
+unset.
+
+Point the `openai` provider at their address in the top-level `providers:`
+block, the same way `ollama` is configured:
+
+```yaml
+parliament:
+  members:
+    - name: Groq
+      provider: openai
+      model: llama-3.3-70b-versatile
+
+providers:
+  openai:
+    base_url: https://api.groq.com/openai/v1
+    api_key: gsk_...        # or leave it out and export OPENAI_API_KEY
+```
+
+A member using Mistral instead:
+
+```yaml
+providers:
+  openai:
+    base_url: https://api.mistral.ai/v1
+```
+
+`providers.<name>` is per provider, not per member, so one config picks one
+OpenAI-compatible endpoint at a time.
+
+The model picker lists both live, and their models carry tiers, so a Groq
+`llama-3.3-70b-versatile` (tier 2) sitting beside a `phi3:mini` (tier 4) still
+raises the usual tier-gap warning.
+
 ## Does it cost 3× more?
 
 Yes — Parliament makes more API calls than asking a single model: 3 for First

@@ -173,3 +173,124 @@ def test_picker_data_for_unknown_provider() -> None:
     data = model_catalog.picker_data_for("zzz")
     assert data.models == []
     assert "Unknown provider" in (data.notice or "")
+
+
+def test_openai_compatible_registry_shape() -> None:
+    # Groq and Mistral speak the OpenAI API at a different address; the
+    # registry is what stops that becoming a second client.
+    assert set(model_catalog.OPENAI_COMPATIBLE) == {"openai", "groq", "mistral"}
+    assert model_catalog.OPENAI_COMPATIBLE["groq"].base_url == "https://api.groq.com/openai/v1"
+    assert model_catalog.OPENAI_COMPATIBLE["mistral"].base_url == "https://api.mistral.ai/v1"
+    assert model_catalog.OPENAI_COMPATIBLE["groq"].env_var == "GROQ_API_KEY"
+    assert model_catalog.OPENAI_COMPATIBLE["mistral"].env_var == "MISTRAL_API_KEY"
+
+
+@pytest.mark.parametrize(
+    ("provider", "expected_url"),
+    [
+        ("openai", "https://api.openai.com/v1/models"),
+        ("groq", "https://api.groq.com/openai/v1/models"),
+        ("mistral", "https://api.mistral.ai/v1/models"),
+    ],
+)
+def test_each_provider_is_asked_at_its_own_address(
+    provider: str, expected_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: dict[str, Any] = {}
+
+    def fake_urlopen(req, timeout):
+        seen["url"] = req.full_url
+        seen["auth"] = req.headers.get("Authorization")
+        return _fake_response({"data": [{"id": "b"}, {"id": "a"}]})
+
+    monkeypatch.setattr(model_catalog.urllib.request, "urlopen", fake_urlopen)
+    data = model_catalog.fetch_openai_compatible_models(provider, "sk-test")
+
+    assert seen["url"] == expected_url
+    assert seen["auth"] == "Bearer sk-test"
+    assert data.models == ["a", "b"]
+    assert data.notice is None
+
+
+def test_missing_key_names_that_provider_s_own_env_var() -> None:
+    # Telling a Groq user to set OPENAI_API_KEY would be worse than saying
+    # nothing, so the notice has to come from the registry.
+    notice = model_catalog.fetch_openai_compatible_models("groq", None).notice
+    assert notice is not None
+    assert "GROQ_API_KEY" in notice
+    assert "groq" in notice
+    assert "OPENAI_API_KEY" not in notice
+
+
+def test_unknown_provider_is_reported_not_guessed() -> None:
+    data = model_catalog.fetch_openai_compatible_models("nope", "sk-test")
+    assert data.models == []
+    assert data.notice == "Unknown provider: nope"
+
+
+def test_picker_routes_the_new_providers(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GROQ_API_KEY", "gsk-test")
+    seen: dict[str, Any] = {}
+
+    def fake_urlopen(req, timeout):
+        seen["url"] = req.full_url
+        return _fake_response({"data": [{"id": "llama-3.1-8b-instant"}]})
+
+    monkeypatch.setattr(model_catalog.urllib.request, "urlopen", fake_urlopen)
+    data = model_catalog.picker_data_for("groq")
+
+    assert seen["url"] == "https://api.groq.com/openai/v1/models"
+    assert data.models == ["llama-3.1-8b-instant"]
+
+
+def test_openai_behaviour_is_unchanged(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_urlopen(req, timeout):
+        assert req.full_url == "https://api.openai.com/v1/models"
+        return _fake_response({"data": [{"id": "gpt-4o"}]})
+
+    monkeypatch.setattr(model_catalog.urllib.request, "urlopen", fake_urlopen)
+    assert model_catalog.fetch_openai_models("sk-test").models == ["gpt-4o"]
+    assert "OPENAI_API_KEY" in (model_catalog.fetch_openai_models(None).notice or "")
+
+
+def test_openai_provider_accepts_a_base_url() -> None:
+    # The point of the presets: Groq and Mistral are the OpenAI API at another
+    # address, and OpenAIProvider used to reject base_url outright with
+    # TypeError, so no amount of config could reach them.
+    from parliament.providers import create_provider
+
+    groq = create_provider(
+        "openai", "llama-3.3-70b-versatile", base_url="https://api.groq.com/openai/v1"
+    )
+    assert groq._base_url == "https://api.groq.com/openai/v1"
+
+    # Unset stays unset, so the default path still goes to api.openai.com.
+    assert create_provider("openai", "gpt-4o")._base_url is None
+
+
+def test_the_new_models_carry_tiers() -> None:
+    from parliament.core.model_tiers import DEFAULT_TIER, get_tier
+
+    assert get_tier("llama-3.3-70b-versatile") == 2
+    assert get_tier("mistral-large-latest") == 2
+    assert get_tier("mistral-small-latest") == 3
+    assert get_tier("llama-3.1-8b-instant") == 3
+    # Still the fallback for anything not listed.
+    assert get_tier("some-model-nobody-listed") == DEFAULT_TIER
+
+
+def test_discovery_key_falls_back_to_the_openai_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Pointing the openai provider at Groq puts the Groq key in OPENAI_API_KEY,
+    # and `parliament keys set` has nowhere else to put it. Reporting "no key"
+    # to someone whose config works would be the wrong answer.
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "gsk-in-the-openai-slot")
+    assert model_catalog.openai_compatible_key("groq") == "gsk-in-the-openai-slot"
+
+    monkeypatch.setenv("GROQ_API_KEY", "gsk-dedicated")
+    assert model_catalog.openai_compatible_key("groq") == "gsk-dedicated"
+
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    assert model_catalog.openai_compatible_key("groq") is None
+    assert model_catalog.openai_compatible_key("nope") is None
