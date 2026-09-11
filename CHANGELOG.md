@@ -8,6 +8,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`degraded` on `Hansard`** — `true` when the verdict was reached with fewer
+  members than configured because one or more members failed with a provider
+  error. Degraded mode itself is unchanged, but `--json` consumers can now tell
+  a three-member verdict from a two-member one without re-deriving it from the
+  response arrays. Documented in `docs/hansard-schema.md`. Fixes the second half
+  of #34.
+
 - **`parliament --version`** — prints the installed version and exits 0, via
   Click's `version_option` (also exposed as `-V`); the version comes from
   `parliament.__version__`, which is read from package metadata so it cannot
@@ -42,6 +49,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - README and AGENTS.md still documented `verdict` as the built-in default
   Hansard level; it has been `minimal` since 0.2.0. Both now also state that
   saved `.md` files are always written at `archive` level.
+- **A cancelled member no longer shrinks the debate.** `run_first_reading()` and
+  `run_debate()` filtered gather results with `isinstance(r, Exception)`, which
+  `CancelledError` fails (it is a `BaseException`), so a cancelled member was
+  returned as if it were a `Response` — a function annotated `-> list[Response]`
+  returning exception objects. Cancellation now aborts the debate instead. This
+  also fixes the case that motivated #34: a Ctrl-C or an enclosing
+  `asyncio.timeout` during First Reading dropped one member and kept going, so a
+  timeout could return a confident verdict built from fewer members than
+  configured. Provider failures still degrade as before. Fixes #34.
+- `parliament ask` exits 130 with "Debate cancelled." on `CancelledError`, not
+  just `KeyboardInterrupt`; previously a `CancelledError` escaping
+  `asyncio.run()` missed the `except Exception` handler and printed a traceback.
 
 ### Fixed
 

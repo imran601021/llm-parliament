@@ -83,7 +83,16 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-# B904 is not in ruff's default set, so nothing enforced this before: `ruff
-# check .` was green while ten `raise`s inside `except` blocks discarded the
-# error that caused them. Enforcing it here is what stops an eleventh.
-extend-select = ["B904"]
+# Neither rule is in ruff's default set, so nothing enforced either before.
+# B904: `ruff check .` was green while ten `raise`s inside `except` blocks
+# discarded the error that caused them. Enforcing it is what stops an
+# eleventh. I: import sorting, so the order stops being a matter of taste.
+#
+# `extend-select`, not `select`: this adds both rules to whatever ruff
+# enforces by default rather than replacing it. `select = ["B904", "I"]` would
+# pin the rule set to the four families ruff 0.8 defaulted to, silencing
+# everything a newer ruff has learned since. That matters because the
+# `ruff>=0.8,<0.16` dev pin above is deliberately temporary -- when #30 lifts
+# it, `extend-select` picks the new defaults up and `select` would have
+# hidden them.
+extend-select = ["B904", "I"]

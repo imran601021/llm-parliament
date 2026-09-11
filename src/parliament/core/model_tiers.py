@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from parliament.core.types import Member
 
-
 # Tier 1 = frontier, Tier 4 = small
 MODEL_TIERS: dict[str, int] = {
     # Tier 1 — frontier

@@ -250,7 +250,9 @@ def ask(
         with renderer:
             try:
                 hansard = asyncio.run(p.ask(question))
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, asyncio.CancelledError):
+                # CancelledError is a BaseException, so it would otherwise
+                # miss the `except Exception` below and escape as a traceback.
                 diag.print("[yellow]Debate cancelled.[/yellow]")
                 # Asked for, not a failure, so there is no cause to carry.
                 raise SystemExit(130) from None

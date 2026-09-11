@@ -5,14 +5,13 @@ from __future__ import annotations
 import time
 from typing import Callable
 
-from parliament.core.types import Bill, Hansard, Member, ProgressEvent
 from parliament.core.model_tiers import detect_gap, resolve_member_tier
-from parliament.providers.base import Provider
-from parliament.providers.errors import format_provider_error
-from parliament.procedures.first_reading import run_first_reading
+from parliament.core.types import Bill, Hansard, Member, ProgressEvent
 from parliament.procedures.debate import run_debate
 from parliament.procedures.division import run_division
-
+from parliament.procedures.first_reading import run_first_reading
+from parliament.providers.base import Provider
+from parliament.providers.errors import format_provider_error
 
 # Renderers receive a single ProgressEvent (phase, member, kind, payload).
 ProgressCallback = Callable[[ProgressEvent], None]
@@ -157,6 +156,14 @@ class Parliament:
 
         duration_ms = int((time.monotonic() - start) * 1000)
 
+        # Record a verdict reached with fewer members than configured, so a
+        # consumer can tell a three-member verdict from a two-member one
+        # without re-deriving it from the response lists.
+        degraded = (
+            len(first_reading) < len(self.members)
+            or len(debate) < len(first_reading)
+        )
+
         return Hansard(
             bill=bill,
             members=self.members,
@@ -164,6 +171,7 @@ class Parliament:
             debate=debate,
             synthesis=synthesis,
             duration_ms=duration_ms,
+            degraded=degraded,
         )
 
     def check_gaps(self) -> list[str]:

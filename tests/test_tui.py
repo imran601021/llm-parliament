@@ -9,12 +9,12 @@ from parliament import tui as tui_mod
 from parliament.tui import (
     AppSettings,
     MemberEditorState,
-    build_model_settings,
-    load_app_settings,
+    _draw_result,
     _mask_api_key,
     _model_picker_options,
-    _draw_result,
     _save_member_edit,
+    build_model_settings,
+    load_app_settings,
     save_app_settings,
     save_hansard,
 )

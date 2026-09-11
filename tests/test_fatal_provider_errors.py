@@ -6,10 +6,10 @@ import pytest
 
 from parliament.core.parliament import Parliament
 from parliament.core.types import Bill, Member, Response
+from parliament.procedures.debate import run_debate
+from parliament.procedures.first_reading import run_first_reading
 from parliament.providers.base import Provider
 from parliament.providers.mock import MockProvider
-from parliament.procedures.first_reading import run_first_reading
-from parliament.procedures.debate import run_debate
 
 
 def _noop(event):

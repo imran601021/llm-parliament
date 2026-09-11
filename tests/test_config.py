@@ -137,8 +137,9 @@ def test_example_config_carries_hansard_level(fresh_home):
 def test_user_supplied_show_debate_false_round_trips(tmp_path, monkeypatch):
     """A user who writes show_debate: false in their YAML must see it preserved on load."""
     monkeypatch.setattr(__import__("pathlib").Path, "home", lambda: tmp_path)
-    import parliament.config as config
     import importlib
+
+    import parliament.config as config
     importlib.reload(config)
 
     custom = tmp_path / "custom.yaml"

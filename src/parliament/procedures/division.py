@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 import time
 from typing import Callable
 
 from parliament.core.types import Bill, Member, ProgressEvent, Response, Synthesis
+from parliament.procedures.results import CANCELLED_MESSAGE
 from parliament.providers.base import Provider
 
 PROMPT_TEMPLATE = """\
@@ -102,6 +104,20 @@ async def run_division(
 
     try:
         raw = await speaker_provider.generate(prompt)
+    except asyncio.CancelledError:
+        # Not a provider fault — report it so Division doesn't sit at
+        # "started" forever, then let the cancellation propagate.
+        duration_ms = int((time.monotonic() - start) * 1000)
+        on_progress(
+            ProgressEvent(
+                phase="division",
+                member_name=speaker.name,
+                kind="failed",
+                error=CANCELLED_MESSAGE,
+                duration_ms=duration_ms,
+            )
+        )
+        raise
     except Exception as exc:
         duration_ms = int((time.monotonic() - start) * 1000)
         on_progress(

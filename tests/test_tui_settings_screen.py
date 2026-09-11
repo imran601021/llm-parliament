@@ -15,7 +15,6 @@ from parliament.tui import (
     _save_settings,
 )
 
-
 # ---------- helpers ----------
 
 

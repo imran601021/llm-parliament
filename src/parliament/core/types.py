@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
 import json
+import uuid
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -86,6 +86,11 @@ class Hansard:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     duration_ms: int = 0
+    # True when the verdict was reached with fewer members than configured,
+    # because one or more members failed with a provider error. Degraded mode
+    # is intended behaviour, but a consumer has to be able to tell a
+    # three-member verdict from a two-member one — see #34.
+    degraded: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -104,4 +109,6 @@ class Hansard:
             id=data["id"],
             created_at=data["created_at"],
             duration_ms=data["duration_ms"],
+            # Absent in Hansards written before the field existed.
+            degraded=data.get("degraded", False),
         )

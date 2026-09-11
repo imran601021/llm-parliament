@@ -16,7 +16,6 @@ from parliament.render import (
     build_renderer,
 )
 
-
 # ---------- SilentRenderer ----------
 
 
