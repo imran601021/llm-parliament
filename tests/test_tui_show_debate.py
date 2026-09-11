@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from parliament import tui as tui_mod
-from parliament.core.types import Hansard, Bill, Synthesis
+from parliament.core.types import Bill, Hansard, Synthesis
 from parliament.render import CursesLiveRenderer
 
 

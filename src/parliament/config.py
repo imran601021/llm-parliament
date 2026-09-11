@@ -12,8 +12,8 @@ from typing import Any
 
 import yaml
 
-from parliament.core.types import Member
 from parliament.core.model_tiers import get_tier
+from parliament.core.types import Member
 from parliament.providers import create_provider
 from parliament.providers.base import Provider
 

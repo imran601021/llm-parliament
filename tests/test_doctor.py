@@ -182,8 +182,9 @@ def test_check_provider_fails_when_sdk_unimportable(monkeypatch):
 
 
 def test_check_ollama_reports_reachable_with_model_count(monkeypatch):
-    from parliament import doctor
     import httpx
+
+    from parliament import doctor
 
     class FakeResponse:
         status_code = 200
@@ -204,8 +205,9 @@ def test_check_ollama_reports_reachable_with_model_count(monkeypatch):
 
 
 def test_check_ollama_reports_unreachable_as_info_not_failure(monkeypatch):
-    from parliament import doctor
     import httpx
+
+    from parliament import doctor
 
     def fake_get(url, timeout=None):
         raise httpx.ConnectError("connection refused")
@@ -219,8 +221,9 @@ def test_check_ollama_reports_unreachable_as_info_not_failure(monkeypatch):
 
 
 def test_check_ollama_treats_timeout_as_unreachable(monkeypatch):
-    from parliament import doctor
     import httpx
+
+    from parliament import doctor
 
     def fake_get(url, timeout=None):
         raise httpx.TimeoutException("slow")

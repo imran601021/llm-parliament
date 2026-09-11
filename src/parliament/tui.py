@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import curses
+import dataclasses
 import json
 import os
 import re
 import sys
-import dataclasses
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -30,12 +30,12 @@ from parliament.config import (
     save_config,
     save_key,
 )
-from parliament.render.hansard import HansardLevel
 from parliament.core.model_tiers import get_tier, get_tier_label
 from parliament.core.parliament import Parliament
 from parliament.core.types import Hansard, Member
 from parliament.model_catalog import picker_data_for
 from parliament.render import build_renderer
+from parliament.render.hansard import HansardLevel
 
 SETTINGS_FILE = PARLIAMENT_DIR / "settings.json"
 DEFAULT_SAVE_DIR = PARLIAMENT_DIR / "hansards"
@@ -1638,7 +1638,8 @@ def save_hansard(
     level: "HansardLevel | None" = None,
 ) -> Path:
     """Save a Hansard Markdown file. Defaults to ARCHIVE level regardless of display level."""
-    from parliament.render.hansard import HansardLevel as _HL, render_markdown
+    from parliament.render.hansard import HansardLevel as _HL
+    from parliament.render.hansard import render_markdown
 
     resolved_level = level if level is not None else _HL.ARCHIVE
 
@@ -1667,7 +1668,8 @@ def _result_lines(hansard: Hansard, level: "HansardLevel | None" = None, width: 
       - full:    + first reading and debate transcripts (rendered as
                  ### {member} blocks, scrollable in the result screen)
     """
-    from parliament.render.hansard import HansardLevel as _HL, includes
+    from parliament.render.hansard import HansardLevel as _HL
+    from parliament.render.hansard import includes
     resolved = level if level is not None else _HL.VERDICT
 
     synthesis = hansard.synthesis

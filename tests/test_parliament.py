@@ -1,8 +1,9 @@
 """Integration test — full pipeline with mock providers, no API calls."""
 
 import pytest
-from parliament.core.types import Member
+
 from parliament.core.parliament import Parliament, select_speaker
+from parliament.core.types import Member
 from parliament.providers.mock import MockProvider
 
 
@@ -60,8 +61,9 @@ async def test_full_pipeline_2_members(mock_parliament_2):
 
 async def test_hansard_serializable(mock_parliament_3):
     """Hansard should round-trip through JSON."""
-    from parliament.core.types import Hansard
     import json
+
+    from parliament.core.types import Hansard
 
     hansard = await mock_parliament_3.ask("Test question")
     j = hansard.to_json()

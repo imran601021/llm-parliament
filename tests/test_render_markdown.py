@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from parliament.render.hansard import HansardLevel, render_markdown
 
-
 # --- Task 5: minimal level ---
 
 def test_minimal_renders_question_h1_and_recommendation_callout(make_hansard):
