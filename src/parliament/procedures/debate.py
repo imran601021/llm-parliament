@@ -7,6 +7,7 @@ import time
 from typing import Callable
 
 from parliament.core.types import Bill, Member, ProgressEvent, Response
+from parliament.procedures.results import CANCELLED_MESSAGE, partition_results
 from parliament.providers.base import Provider
 from parliament.providers.errors import format_provider_error
 
@@ -80,6 +81,20 @@ async def _debate_one(
             )
         )
         return response
+    except asyncio.CancelledError:
+        # Not a provider fault — report it so the member doesn't sit at
+        # "started" forever, then let the cancellation propagate.
+        duration_ms = int((time.monotonic() - start) * 1000)
+        on_progress(
+            ProgressEvent(
+                phase="debate",
+                member_name=member.name,
+                kind="failed",
+                error=CANCELLED_MESSAGE,
+                duration_ms=duration_ms,
+            )
+        )
+        raise
     except Exception as exc:
         duration_ms = int((time.monotonic() - start) * 1000)
         on_progress(
@@ -118,18 +133,10 @@ async def run_debate(
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    responses = []
-    for r in results:
-        if isinstance(r, Exception):
-            continue
-        responses.append(r)
+    # A cancelled member aborts the debate; a failed provider degrades it.
+    responses, failures = partition_results(results, active_members)
 
     if len(responses) < 2:
-        failures = [
-            f"  - {m.name}: {format_provider_error(r)}"
-            for m, r in zip(active_members, results)
-            if isinstance(r, Exception)
-        ]
         raise RuntimeError(
             "Not enough members responded to continue "
             "(need at least 2 responses after Debate).\n"

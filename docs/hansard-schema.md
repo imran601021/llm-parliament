@@ -23,6 +23,29 @@ parliament ask "Should we split this service?" --mock --json
 | `id` | `string` | UUID for this Hansard. |
 | `created_at` | `string` | ISO-8601 timestamp for when the session was created. |
 | `duration_ms` | `number` | Total wall-clock duration in milliseconds. |
+| `degraded` | `boolean` | `true` when the verdict came from fewer members than configured, because one or more members failed with a provider error. |
+
+### `degraded`
+
+Degraded mode is intended behaviour: if a provider times out or runs out of
+quota, the remaining members carry on and you still get a verdict. What it does
+*not* tell you on its own is how many members that verdict came from, and a
+two-member verdict is a weaker thing than a three-member one. `degraded` makes
+that visible to a consumer without re-deriving it from the response arrays.
+
+Check it before trusting a verdict in a script or an agent tool call:
+
+```bash
+parliament ask "Should we split this service?" --json \
+  | jq -e '.degraded' >/dev/null \
+  && echo "warning: partial debate" \
+  || echo "all members responded"
+```
+
+A debate that is **cancelled** — Ctrl-C, an enclosing timeout, a disconnected
+client — does not produce a Hansard at all. `ask()` re-raises
+`asyncio.CancelledError` rather than returning a partial verdict, so a
+cancelled call can never be mistaken for a confident one.
 
 ## `Bill`
 
@@ -129,7 +152,8 @@ jq -e '(.members | length) == (.first_reading | length)' hansard.json >/dev/null
   },
   "id": "b0a5f3b0-1111-4222-8333-444455556666",
   "created_at": "2026-01-01T12:00:00+00:00",
-  "duration_ms": 1234
+  "duration_ms": 1234,
+  "degraded": false
 }
 ```
 

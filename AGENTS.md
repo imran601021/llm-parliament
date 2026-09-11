@@ -43,6 +43,7 @@ src/parliament/
     first_reading.py  Phase 1 — parallel member analyses
     debate.py         Phase 2 — each member critiques all others
     division.py       Phase 3 — Speaker synthesises; parse_synthesis() lives here
+    results.py        Shared gather-result partitioning (abort vs degrade)
   providers/
     base.py           Provider ABC
     errors.py         Human-readable formatting for provider exceptions
@@ -85,6 +86,28 @@ Parliament.ask(question)
 
 All three phases emit `ProgressEvent` objects via `on_progress` callback.
 The renderer (`DebateRenderer`) receives these events and draws to screen.
+
+### Abort vs degrade
+
+The two parallel phases gather with `return_exceptions=True`, then every result
+must be classified as *abort* or *degrade*. That decision lives in one place,
+`procedures/results.py::partition_results()`, so First Reading and Debate cannot
+drift apart.
+
+- **`Exception` → degrade.** A provider fault (timeout, quota, connection
+  refused) drops that member and the debate continues with the survivors. This
+  is intended behaviour.
+- **Any other `BaseException` → abort.** `CancelledError`, `KeyboardInterrupt`,
+  `SystemExit`. These mean something upstream asked for the work to stop, so
+  they are re-raised rather than absorbed. Swallowing them turns a Ctrl-C or an
+  enclosing `asyncio.timeout` into a confident verdict built from fewer members
+  than the user configured — which is the failure mode #9 (MCP server mode)
+  makes dangerous, because an agent acts on that verdict.
+
+Never reintroduce a bare `isinstance(r, Exception)` filter in a phase — it
+misses `CancelledError`, which is a `BaseException`.
+
+A Hansard built from fewer members than configured carries `degraded=True`.
 
 ### Threading model
 
@@ -143,7 +166,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Testing
 
 ```bash
-python -m pytest -q          # 401 tests expected (as of v0.2.0)
+python -m pytest -q          # 433 tests expected (as of #34)
 ruff check .                 # must be clean before any commit
 ```
 

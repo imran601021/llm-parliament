@@ -157,6 +157,14 @@ class Parliament:
 
         duration_ms = int((time.monotonic() - start) * 1000)
 
+        # Record a verdict reached with fewer members than configured, so a
+        # consumer can tell a three-member verdict from a two-member one
+        # without re-deriving it from the response lists.
+        degraded = (
+            len(first_reading) < len(self.members)
+            or len(debate) < len(first_reading)
+        )
+
         return Hansard(
             bill=bill,
             members=self.members,
@@ -164,6 +172,7 @@ class Parliament:
             debate=debate,
             synthesis=synthesis,
             duration_ms=duration_ms,
+            degraded=degraded,
         )
 
     def check_gaps(self) -> list[str]:
