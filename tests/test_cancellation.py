@@ -13,11 +13,11 @@ import pytest
 
 from parliament.core.parliament import Parliament
 from parliament.core.types import Bill, Hansard, Member, Response, Synthesis
-from parliament.providers.base import Provider
-from parliament.providers.mock import MockProvider
 from parliament.procedures.debate import run_debate
 from parliament.procedures.first_reading import run_first_reading
 from parliament.procedures.results import CANCELLED_MESSAGE, is_abort
+from parliament.providers.base import Provider
+from parliament.providers.mock import MockProvider
 
 
 def _noop(event):
