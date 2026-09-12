@@ -107,7 +107,15 @@ ruff check .                # must be clean
 mypy src/parliament         # must pass
 ```
 
-All three run in CI; pytest runs on Linux, macOS, and Windows across Python 3.11–3.13, while Ruff and mypy run on Linux.
+All three run in CI: pytest on Linux, macOS, and Windows across Python
+3.11–3.13; Ruff and mypy on Linux. Running them locally before pushing means
+CI rarely surprises you.
+
+The mypy config is a permissive baseline to ratchet, not a full type gate.
+With only `ignore_missing_imports` set, mypy skips the bodies of unannotated
+functions, so “mypy passes” currently means “nothing already annotated is
+wrong” rather than “the codebase is typed”. Tightening it is incremental work,
+not a prerequisite for contributing.
 
 Useful subsets while iterating:
 

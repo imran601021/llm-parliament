@@ -141,9 +141,9 @@ All `resolve_*` helpers in `config.py` follow: CLI flag > env var > config YAML 
 and PR expectations. Both must stay true — if you change a convention here,
 check whether `CONTRIBUTING.md` repeats it.
 
-Every PR runs `.github/workflows/ci.yml`: `ruff check .` on Linux, and
-`python -m pytest -q` on Linux (3.11/3.12/3.13), macOS, and Windows. Run both
-locally before pushing.
+Every PR runs `.github/workflows/ci.yml`: `ruff check .` and
+`mypy src/parliament` on Linux, and `python -m pytest -q` on Linux
+(3.11/3.12/3.13), macOS, and Windows. Run all three locally before pushing.
 
 Issues carry `good first issue` and `help wanted` labels; small, well-scoped
 gaps should be filed as issues with those labels rather than fixed silently, so
@@ -173,6 +173,10 @@ mypy src/parliament          # must pass before any commit
 
 Dev deps (`pytest`, `pytest-asyncio`, `ruff`, `mypy`) are in `pyproject.toml` under
 `[project.optional-dependencies] dev`. Install via `pipx inject` or `pip install -e ".[dev]"`.
+
+The mypy config is a permissive baseline to ratchet rather than a full type
+gate: with only `ignore_missing_imports`, unannotated function bodies are not
+checked at all. Treat a green run as “nothing already annotated regressed”.
 
 ### Code style
 

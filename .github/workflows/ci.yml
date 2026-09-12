@@ -28,6 +28,7 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Ruff
         run: ruff check .
+
   type-check:
     name: mypy
     runs-on: ubuntu-latest
