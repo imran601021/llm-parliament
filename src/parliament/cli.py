@@ -29,9 +29,8 @@ from parliament.config import (
 )
 from parliament.core.model_tiers import detect_gap, get_tier_label
 from parliament.core.parliament import Parliament
-from parliament.render import JsonDiagnosticsRenderer, build_renderer
 from parliament.providers.base import Provider
-from parliament.render import SilentRenderer, build_renderer
+from parliament.render import JsonDiagnosticsRenderer, build_renderer
 from parliament.render.hansard import HansardLevel, render_terminal
 
 console = (
